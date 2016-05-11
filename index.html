@@ -137,13 +137,12 @@ function gcoin_Decode() {
   point = 7;
 
   // get the next information's length & update the point
-  nxt = parseInt(inputhex.substr(8, 2), 16);
+  nxt = parseInt(decode_string.substr(7, 2), 16);
   console.log("length of name: " + nxt);
   point += 2;
 
   // fetch the "Name" & update the point
   document.Decode_FORM.color_name.value = decode_string.substr(point, nxt);
-  document.Decode_FORM.color_name.value = hex2a(inputhex.substr(point, nxt*2));
   console.log("name: " + decode_string.substr(point, nxt));
   point += nxt;
 
