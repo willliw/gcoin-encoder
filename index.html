@@ -1,0 +1,439 @@
+<html>
+
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+<link rel="stylesheet" href="mystyle.css">
+<title>Length Equivalents</title>
+<script LANGUAGE="JavaScript">
+
+function hex2a(hexx) {
+    var hex = hexx.toString();//force conversion
+    var str = '';
+    for (var i = 0; i < hex.length; i += 2) {
+        temp = '';
+        temp = parseInt(hex.substr(i, 2), 16);
+        //console.log(temp);
+        if (temp > 32 && temp < 126){
+            temp = String.fromCharCode(parseInt(hex.substr(i, 2), 16));
+            str += temp;
+        }
+        else{
+            str += hex.substr(i, 2);
+        }
+    }
+    return str;
+}
+
+function a2hex(str) {
+  var arr = [];
+  for (var i = 0, l = str.length; i < l; i ++) {
+    var hex = Number(str.charCodeAt(i)).toString(16);
+    arr.push(hex.length > 1 && hex || "0" + hex);
+  }
+  return arr.join('');
+}
+
+function gcoin_Encode() {
+
+  raw_version = document.Encode_FORM.version.value;
+  raw_name = document.Encode_FORM.color_name.value;
+  raw_discrip = document.Encode_FORM.color_description.value;
+  raw_issuer = document.Encode_FORM.color_issuer.value;
+  raw_div = document.Encode_FORM.color_divisibility.value;
+  raw_feeType = document.Encode_FORM.color_fee_type.value;
+  //raw_feeRate = document.Encode_FORM.color_fee_rate.value;
+  raw_feeCollector = document.Encode_FORM.color_fee_collector.value;
+  //raw_limit = document.Encode_FORM.color_upper_limit.value;
+  raw_schedule = document.Encode_FORM.color_mint_schedule.value;
+  raw_memberControl = document.Encode_FORM.color_member_control.value;
+  raw_link = document.Encode_FORM.color_metadata_link.value;
+  //raw_meta = document.Encode_FORM.color_metadata_hash.value;
+  
+  var result = '';
+
+  // hardcode the init value
+  result = result.concat("72")
+
+  // hardcode the "version"
+  result = result.concat("110100");
+
+  // add the length of the name
+  len = raw_name.length.toString(16);
+  if(len.length == 1)
+    result = result.concat("0" + len);
+    else if(len.length == 2)
+        result = result.concat(len);
+
+  // add the "Name"
+  result = result.concat(a2hex(raw_name))
+
+  // add the length of the description
+  len = raw_discrip.length.toString(16);
+  if(len.length == 1)
+    result = result.concat("0" + len);
+    else if(len.length == 2)
+        result = result.concat(len);
+
+  // add the "Discription"
+  result = result.concat(a2hex(raw_discrip));
+
+  // add the issuer address
+  // hardcode a " mark
+  result = result.concat(a2hex("\"" + raw_issuer));
+
+  // add the divisibility
+  result = result.concat(raw_div);
+
+  // add the fee_type
+  result = result.concat(raw_feeType);
+
+  // TODO: fee rate, now hardcoded
+  result = result.concat("0000000000000000000000");
+
+  // add the fee collector address
+  // hardcode a " mark
+  result = result.concat(a2hex("\"" + raw_feeCollector));
+
+  // TODO: limit, now hardcoded
+  result = result.concat("0000000000000000");
+
+  // add the mint schedule
+  result = result.concat(raw_schedule);
+
+  // TO BE CHECK: skip 6 length 
+  result = result.concat("000000")
+
+  // add the member control 
+  result = result.concat(raw_memberControl);
+
+  // add the length of the metadata link
+  len = raw_link.length.toString(16);
+  if(len.length == 1)
+    result = result.concat("0" + len);
+    else if(len.length == 2)
+        result = result.concat(len);
+
+  // add the metadata link 
+  result = result.concat(a2hex(raw_link));
+
+  // TODO: add the metadata hash, now hardcoded
+  result = result.concat("0000000000000000000000000000000000000000000000000000000000000000")
+
+  document.Encode_FORM.Encode_result.value = result;
+
+}
+
+function gcoin_Decode() {
+  inputhex = document.Decode_FORM.hexstr.value;
+  decode_string = hex2a(inputhex);
+  console.log(decode_string);
+
+  // check the version 
+  if(decode_string.substr(1, 6) == 110100){
+    document.Decode_FORM.version.value = 1;
+  }
+
+  // start decode the decode string at lenght 7 
+  point = 7;
+
+  // get the next information's length & update the point
+  nxt = parseInt(inputhex.substr(8, 2), 16);
+  console.log("length of name: " + nxt);
+  point += 2;
+
+  // fetch the "Name" & update the point
+  document.Decode_FORM.color_name.value = decode_string.substr(point, nxt);
+  document.Decode_FORM.color_name.value = hex2a(inputhex.substr(point, nxt*2));
+  console.log("name: " + decode_string.substr(point, nxt));
+  point += nxt;
+
+  // get the next information's length & update the point
+  nxt = parseInt(decode_string.substr(point, 2), 16);
+  console.log("length of Description: " + nxt);
+  point += 2;
+
+  // fetch the "Description" & update the point
+  document.Decode_FORM.color_description.value = decode_string.substr(point, nxt);
+  point += nxt;
+
+  // fetch the "Issuer" address & update the point 
+  // need to skip 1 length for the " marks
+  document.Decode_FORM.color_issuer.value = decode_string.substr(point+1, 34);
+  point += 35;
+
+  // fetch the "Divisibility" & update the point 
+  temp = decode_string.substr(point, 2)
+  if(temp == 00)
+    document.Decode_FORM.color_divisibility.value = "false";
+    else if (temp == 01)
+        document.Decode_FORM.color_divisibility.value = "true";
+  point += 2; 
+
+  // fetch the "fee_type" & update the point
+  temp = decode_string.substr(point, 2)
+  console.log(temp);
+  if (temp == 00)
+    fee_type = "fixed";
+    else if (temp == 01)
+        fee_type = "by_size";
+    else if (temp == 02)
+        fee_type = "by_amount";
+  document.Decode_FORM.color_fee_type.value = fee_type;
+  point += 2;
+
+  // TODO: check the fee_rate encoder, now skip 
+  console.log(decode_string.substr(point, 22));
+  document.Decode_FORM.color_fee_rate.value = "0.0";
+  point += 22; 
+
+  // fetch the "fee_collector" address & update the point 
+  // need to skip 1 length for the " marks
+  document.Decode_FORM.color_fee_collector.value = decode_string.substr(point+1, 34);
+  point += 35;
+
+  // TODO: convert the upper_limit, now skip
+  console.log("upper_limit: " + decode_string.substr(point, 16));
+  document.Decode_FORM.color_upper_limit.value = "0";
+  point += 16;
+
+  // fetch the "Minting Schedule"
+  temp = decode_string.substr(point, 2);
+  console.log("mint schedule: " + temp);
+  if (temp == 00)
+    aa = "free";
+    else if (temp == 01)
+        aa = "once";
+    else if (temp == 02)
+        aa = "linear";
+    else if (temp == 03)
+        aa = "half_life";
+  document.Decode_FORM.color_mint_schedule.value = aa;
+  point += 2;
+
+  // TO BE CHECK: skip 6 length 
+  point += 6;
+
+  // fetch the "Member control"
+  temp = decode_string.substr(point, 2)
+  if(temp == 00)
+    document.Decode_FORM.color_member_control.value = "false";
+    else if (temp == 01)
+        document.Decode_FORM.color_member_control.value = "true";
+  point += 2; 
+
+  // get the next information's length & update the point
+  nxt = parseInt(decode_string.substr(point, 2), 16);
+  console.log(nxt);
+  point += 2;
+
+  // fetch the "metadata_link" & update the point
+  console.log("metadata_link: " + decode_string.substr(point, nxt));
+  document.Decode_FORM.color_metadata_link.value = decode_string.substr(point, nxt);
+  point += nxt;
+
+  // TODO: check the metadata_hash
+  document.Decode_FORM.color_metadata_hash.value = decode_string.substr(point, 64);
+  point += 64;
+
+  if (point == decode_string.length)
+    console.log("Decode success!");
+    else
+        console.log("Something wrong.");
+}
+
+// End Hiding -->
+
+</script>
+</head>
+
+<body>
+
+<h2 align="left">Gcoin License Encoder/Decoder </h2>
+
+<div id="Div1">
+<h3 align="left">Encoder</h3>
+<form NAME="Encode_FORM">
+  <table BORDER="1">
+      <td>Version:</td>
+      <td><input TYPE="text" NAME="version" SIZE="50" VALUE="1"></td>
+    </tr>
+
+    <tr>
+      <td>Name:</td>
+      <td><input TYPE="text" NAME="color_name" SIZE="50"></td>
+    </tr>
+
+    <tr>
+      <td>Description:</td>
+      <td><input TYPE="text" NAME="color_description" SIZE="50"></td>
+    </tr>
+
+    <tr>
+      <td>Issuer(address):</td>
+      <td><input TYPE="text" NAME="color_issuer" SIZE="50"></td>
+    </tr>
+
+    <tr>
+      <td>Divisibility:</td>
+      <td>
+      <select NAME="color_divisibility">
+          <option value="01">true</option>
+          <option value="02">false</option>
+      </select>
+      </td>
+
+    <tr>
+      <td>fee_type:</td>
+      <td>
+      <select NAME="color_fee_type">
+          <option value="00">fixed</option>
+          <option value="01">by size</option>
+          <option value="02">by amount</option>
+      </select>
+      </td>
+    </tr>
+
+    <tr>
+      <td>fee_rate:</td>
+<!--  <td><input TYPE="text" NAME="color_fee_rate" SIZE="50" value="0.0"></td> -->
+      <td>0.0</td>
+    </tr>
+
+    <tr>
+      <td>upper_limit:</td>
+<!--  <td><input TYPE="text" NAME="color_upper_limit" SIZE="50" value="0"></td> --> 
+      <td>0</td>   
+    </tr>
+
+    <tr>
+      <td>fee_collector(address):</td>
+      <td><input TYPE="text" NAME="color_fee_collector" SIZE="50"></td>
+    </tr>
+
+    <tr>
+      <td>mint_schedule:</td>
+      <td>
+      <select NAME="color_mint_schedule">
+          <option value="00">free</option>
+          <option value="01">once</option>
+          <option value="02">linear</option>
+          <option value="03">half life</option>>
+      </select>
+      </td>
+    </tr>
+
+    <tr>
+      <td>member_control:</td>
+      <td>
+      <select NAME="color_member_control">
+          <option value="01">true</option>
+          <option value="02">false</option>
+      </select>
+      </td>
+    </tr>
+
+    <tr>
+      <td>metadata_link:</td>
+      <td><input TYPE="text" NAME="color_metadata_link" SIZE="50"></td>
+    </tr>
+
+    <tr>
+      <td>metadata_hash:</td>
+      <!-- <td><input TYPE="text" NAME="color_metadata_hash" SIZE="50" value="hash"></td> -->
+      <td>hash</td>
+    </tr>
+
+    <tr>
+      <td>&nbsp;</td>
+      <td><input TYPE="button" VALUE=" Encode " onClick="gcoin_Encode();"> <input
+      TYPE="reset" VALUE=" Reset Values "><br>
+      <input TYPE="text" NAME="Encode_result" SIZE="50"> </td>
+    </tr>
+  </table>
+</form>
+</div>
+
+<div id="Div2">
+<h3 align="left">Decoder</h1>
+<form NAME="Decode_FORM">
+  <table BORDER="1">
+    <tr>
+      <td>Hex String:</td>
+      <td><input TYPE="text" NAME="hexstr" SIZE="50"><br>
+      <input TYPE="button" VALUE=" Decode " onClick="gcoin_Decode();"> <input
+      TYPE="reset" VALUE=" Reset Values ">
+       </td>
+    </tr>
+
+    <tr>
+      <td>Version:</td>
+      <td><input TYPE="text" NAME="version" SIZE="50"></td>
+    </tr>
+
+    <tr>
+      <td>Name:</td>
+      <td><input TYPE="text" NAME="color_name" SIZE="50"></td>
+    </tr>
+
+    <tr>
+      <td>Description:</td>
+      <td><input TYPE="text" NAME="color_description" SIZE="50"></td>
+    </tr>
+
+    <tr>
+      <td>Issuer(address):</td>
+      <td><input TYPE="text" NAME="color_issuer" SIZE="50"></td>
+    </tr>
+
+    <tr>
+      <td>Divisibility:</td>
+      <td><input TYPE="text" NAME="color_divisibility" SIZE="50"></td>
+    </tr>
+
+    <tr>
+      <td>fee_type:</td>
+      <td><input TYPE="text" NAME="color_fee_type" SIZE="50"></td>
+    </tr>
+
+    <tr>
+      <td>fee_rate:</td>
+      <td><input TYPE="text" NAME="color_fee_rate" SIZE="50"></td>
+    </tr>
+
+    <tr>
+      <td>upper_limit:</td>
+      <td><input TYPE="text" NAME="color_upper_limit" SIZE="50"></td>
+    </tr>
+
+    <tr>
+      <td>fee_collector:</td>
+      <td><input TYPE="text" NAME="color_fee_collector" SIZE="50"></td>
+    </tr>
+
+    <tr>
+      <td>mint_schedule:</td>
+      <td><input TYPE="text" NAME="color_mint_schedule" SIZE="50"></td>
+    </tr>
+
+    <tr>
+      <td>member_control:</td>
+      <td><input TYPE="text" NAME="color_member_control" SIZE="50"></td>
+    </tr>
+
+    <tr>
+      <td>metadata_link:</td>
+      <td><input TYPE="text" NAME="color_metadata_link" SIZE="50"></td>
+    </tr>
+
+    <tr>
+      <td>metadata_hash:</td>
+      <td><input TYPE="text" NAME="color_metadata_hash" SIZE="50"></td>
+    </tr>    
+
+
+  </table>
+</form>
+</div>
+</body>
+</html>
+
